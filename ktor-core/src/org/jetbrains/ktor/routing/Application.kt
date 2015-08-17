@@ -2,90 +2,17 @@ package org.jetbrains.ktor.routing
 
 import org.jetbrains.ktor.application.*
 import org.jetbrains.ktor.http.*
-import java.util.*
-
-open class RoutingApplicationRequest(applicationRequest: ApplicationRequest,
-                                     val resolveResult: RoutingResolveResult) : ApplicationRequest by applicationRequest {
-
-    override val parameters: Map<String, List<String>>
-
-    init {
-        val result = HashMap<String, MutableList<String>>()
-        for ((key, values) in applicationRequest.parameters) {
-            result.getOrPut(key, { arrayListOf() }).addAll(values)
-        }
-        for ((key, values) in resolveResult.values) {
-            if (!result.containsKey(key)) {
-                // HACK: should think about strategy of merging params and resolution values
-                result.getOrPut(key, { arrayListOf() }).addAll(values)
-            }
-        }
-        parameters = result
-    }
-}
 
 public fun Application.routing(body: RoutingEntry.() -> Unit) {
-    val table = Routing()
-    table.body()
-    interceptRoute(table)
+    Routing().apply(body).installInto(this)
 }
 
-fun Application.interceptRoute(routing: RoutingEntry) {
-    handler.intercept { request, next ->
-        val resolveContext = RoutingResolveContext(request.requestLine, request.parameters, request.headers)
-        val resolveResult = routing.resolve(resolveContext)
-        when {
-            resolveResult.succeeded -> {
-                val chain = arrayListOf<RoutingInterceptor>()
-                var current: RoutingEntry? = resolveResult.entry
-                while (current != null) {
-                    chain.addAll(0, current.interceptors)
-                    current = current.parent
-                }
-
-                val handlers = resolveResult.entry.handlers
-                val routingApplicationRequest = RoutingApplicationRequest(request, resolveResult)
-                processChain(chain, routingApplicationRequest, handlers)
-            }
-            else -> next(request)
-        }
-    }
+public fun RoutingEntry.respond(build: ApplicationResponse.() -> ApplicationRequestStatus) {
+    handle { respond(build) }
 }
 
-private fun processChain(interceptors: List<RoutingInterceptor>, request: RoutingApplicationRequest, handlers: ArrayList<(RoutingApplicationRequest) -> ApplicationRequestStatus>): ApplicationRequestStatus {
-    fun handle(index: Int, request: RoutingApplicationRequest): ApplicationRequestStatus {
-        when (index) {
-            in interceptors.indices -> {
-                return interceptors[index].function(request) { request -> handle(index + 1, request) }
-            }
-            else -> {
-                for (handler in handlers) {
-                    val handlerResult = handler(request)
-                    if (handlerResult != ApplicationRequestStatus.Unhandled)
-                        return handlerResult
-                }
-                return ApplicationRequestStatus.Unhandled
-            }
-        }
-    }
-
-    return handle(0, request)
-}
-
-public fun RoutingEntry.respond(body: ApplicationResponse.() -> ApplicationRequestStatus) {
-    handle {
-        respond {
-            body()
-        }
-    }
-}
-
-fun RoutingEntry.methodAndPath(method: HttpMethod, path: String, body: RoutingEntry.() -> Unit) {
-    method(method) {
-        path(path) {
-            body()
-        }
-    }
+fun RoutingEntry.methodAndPath(method: HttpMethod, path: String, build: RoutingEntry.() -> Unit) {
+    method(method) { path(path, build) }
 }
 
 fun RoutingEntry.contentType(contentType: ContentType, build: RoutingEntry.() -> Unit) {

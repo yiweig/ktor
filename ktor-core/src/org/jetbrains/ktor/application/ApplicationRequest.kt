@@ -20,7 +20,5 @@ public interface ApplicationRequest {
 public inline fun ApplicationRequest.createResponse(): ApplicationResponse = createResponse.call()
 public inline fun ApplicationRequest.close(): Unit = close.call()
 public fun ApplicationRequest.respond(handle: ApplicationResponse.() -> ApplicationRequestStatus): ApplicationRequestStatus {
-    val response = createResponse()
-    val result = response.handle()
-    return result
+    return createResponse().handle()
 }

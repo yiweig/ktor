@@ -2,15 +2,16 @@ package org.jetbrains.ktor.routing
 
 import org.jetbrains.ktor.application.*
 import java.util.*
+import kotlin.reflect.*
 
 data class RoutingNode(val selector: RoutingSelector, val entry: RoutingEntry)
-
 data class RoutingInterceptor(val function: (RoutingApplicationRequest, (RoutingApplicationRequest) -> ApplicationRequestStatus) -> ApplicationRequestStatus)
+data class RoutingHandler<TContext>(val contextType: KClass<TContext>, val function: (TContext) -> ApplicationRequestStatus)
 
 open class RoutingEntry(val parent: RoutingEntry?) {
     val children = ArrayList<RoutingNode> ()
     val interceptors = ArrayList<RoutingInterceptor>()
-    val handlers = ArrayList<(RoutingApplicationRequest) -> ApplicationRequestStatus>()
+    val handlers = ArrayList<RoutingHandler<*>>()
 
     public fun select(selector: RoutingSelector): RoutingEntry {
         val existingEntry = children.firstOrNull { it.selector.equals(selector) }?.entry
@@ -53,33 +54,9 @@ open class RoutingEntry(val parent: RoutingEntry?) {
         interceptors.add(RoutingInterceptor(interceptor))
     }
 
-    public fun addHandler(handler: (RoutingApplicationRequest) -> ApplicationRequestStatus) {
-        handlers.add(handler)
+    public inline fun addHandler<reified TContext : Any>(noinline handler: TContext.() -> ApplicationRequestStatus) {
+        handlers.add(RoutingHandler<TContext>(TContext::class, handler))
     }
 
     open fun createChild(): RoutingEntry = RoutingEntry(this)
-}
-
-class Routing : RoutingEntry(null) {
-    data class Key<T : Any>(val name: String)
-
-    val services = hashMapOf<Key<*>, Any>()
-    fun addService<T : Any>(key: Key<T>, service: T) {
-        services.put(key, service)
-    }
-
-    fun getService<T : Any>(key: Key<T>): T {
-        val service = services[key] ?: throw UnsupportedOperationException("Cannot find service for key $key")
-        return service as T
-    }
-}
-
-fun RoutingEntry.getService<T : Any>(key: Routing.Key<T>): T {
-    return if (this is Routing)
-        getService(key)
-    else
-        if (parent == null)
-            throw UnsupportedOperationException("Services cannot be obtained from dangling route entries")
-        else
-            parent.getService(key)
 }

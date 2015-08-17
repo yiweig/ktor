@@ -11,14 +11,13 @@ object Locations : LocationService(DefaultConversionService())
 val locationServiceKey = Routing.Key<LocationService>("LocationService")
 
 public fun Application.locations(body: Routing.() -> Unit) {
-    val routing = Routing()
-    routing.withLocations(Locations, body)
-    interceptRoute(routing)
+    Routing().withLocations(Locations, body).installInto(this)
 }
 
-public fun Routing.withLocations(locations: LocationService, body: Routing.() -> Unit) {
+public fun Routing.withLocations(locations: LocationService, body: Routing.() -> Unit): Routing {
     addService(locationServiceKey, locations)
     body()
+    return this
 }
 
 inline fun RoutingEntry.location<reified T : Any>(noinline body: RoutingEntry.() -> Unit) {
@@ -48,10 +47,10 @@ inline fun <reified T> RoutingEntry.handle(noinline body: RoutingApplicationRequ
 }
 
 fun <T> RoutingEntry.handle(dataClass: KClass<T>, body: RoutingApplicationRequest.(T) -> ApplicationRequestStatus) {
-    addHandler {
+    addHandler<RoutingApplicationRequest> {
         val locationService = getService(locationServiceKey)
-        val location = locationService.resolve<T>(dataClass, it)
-        it.body(location)
+        val location = locationService.resolve<T>(dataClass, this)
+        body(location)
     }
 }
 

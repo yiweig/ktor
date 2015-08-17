@@ -8,10 +8,9 @@ import kotlin.test.*
 
 class HandlerTest {
 
-    Test fun `application with empty handler`() {
-        val testHost = createTestHost()
+    Test fun `application with empty handler`() = withTestApplication {
         on("making a request") {
-            val request = testHost.handleRequest { }
+            val request = handleRequest { }
             it("should not be handled") {
                 assertEquals(ApplicationRequestStatus.Unhandled, request.requestResult)
             }
@@ -21,11 +20,10 @@ class HandlerTest {
         }
     }
 
-    Test fun `application with transparent handler`() {
-        val testHost = createTestHost()
-        testHost.application.handler.intercept { request, next -> next(request) }
+    Test fun `application with transparent handler`() = withTestApplication {
+        application.handler.intercept { request, next -> next(request) }
         on("making a request") {
-            val request = testHost.handleRequest { }
+            val request = handleRequest { }
             it("should not be handled") {
                 assertEquals(ApplicationRequestStatus.Unhandled, request.requestResult)
             }
@@ -35,11 +33,10 @@ class HandlerTest {
         }
     }
 
-    Test fun `application with handler returning true`() {
-        val testHost = createTestHost()
-        testHost.application.handler.intercept { request, next -> ApplicationRequestStatus.Handled }
+    Test fun `application with handler returning true`() = withTestApplication {
+        application.handler.intercept { request, next -> ApplicationRequestStatus.Handled }
         on("making a request") {
-            val request = testHost.handleRequest { }
+            val request = handleRequest { }
             it("should be handled") {
                 assertEquals(ApplicationRequestStatus.Handled, request.requestResult)
             }
@@ -49,15 +46,14 @@ class HandlerTest {
         }
     }
 
-    Test fun `application with handler that returns a valid response`() {
-        val testHost = createTestHost()
-        testHost.application.handler.intercept { request, next ->
+    Test fun `application with handler that returns a valid response`() = withTestApplication {
+        application.handler.intercept { request, next ->
             request.respond {
                 ApplicationRequestStatus.Handled
             }
         }
         on("making a request") {
-            val request = testHost.handleRequest { }
+            val request = handleRequest { }
 
             it("should be handled") {
                 assertEquals(ApplicationRequestStatus.Handled, request.requestResult)
@@ -68,15 +64,14 @@ class HandlerTest {
         }
     }
 
-    Test fun `application with handler that returns two responses`() {
-        val testHost = createTestHost()
-        testHost.application.handler.intercept { request, next ->
+    Test fun `application with handler that returns two responses`() = withTestApplication {
+        application.handler.intercept { request, next ->
             request.respond { ApplicationRequestStatus.Handled }
             request.respond { ApplicationRequestStatus.Handled }
         }
         on("making a request") {
             val request = fails {
-                testHost.handleRequest { }
+                handleRequest { }
             }!!
             it("should throw invalid operation") {
                 assertEquals(request.javaClass, javaClass<IllegalStateException>())
