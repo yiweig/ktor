@@ -1,6 +1,5 @@
 package org.jetbrains.ktor.routing
 
-import org.jetbrains.ktor.application.*
 import org.jetbrains.ktor.http.*
 
 fun RoutingEntry.path(path: String, build: RoutingEntry.() -> Unit) = createRoutingEntry(this, path).build()
@@ -46,4 +45,3 @@ fun RoutingEntry.header(name: String, value: String, build: RoutingEntry.() -> U
     val selector = HttpHeaderRoutingSelector(name, value)
     select(selector).build()
 }
-

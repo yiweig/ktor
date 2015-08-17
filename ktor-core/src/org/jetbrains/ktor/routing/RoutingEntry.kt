@@ -17,38 +17,11 @@ open class RoutingEntry(val parent: RoutingEntry?) {
     public fun select(selector: RoutingSelector): RoutingEntry {
         val existingEntry = children.firstOrNull { it.selector.equals(selector) }?.entry
         if (existingEntry == null) {
-            val entry = createChild()
+            val entry = RoutingEntry(this)
             children.add(RoutingNode(selector, entry))
             return entry
         }
         return existingEntry
-    }
-
-    protected fun resolve(request: RoutingResolveContext, segmentIndex: Int, current: RoutingResolveResult): RoutingResolveResult {
-        var failEntry: RoutingEntry? = null
-        for ((selector, entry) in children) {
-            val result = selector.evaluate(request, segmentIndex)
-            if (result.succeeded) {
-                for ((key, values) in result.values) {
-                    current.values.getOrPut(key, { arrayListOf() }).addAll(values)
-                }
-                val subtreeResult = entry.resolve(request, segmentIndex + result.segmentIncrement, current)
-                if (subtreeResult.succeeded) {
-                    return subtreeResult
-                } else {
-                    failEntry = subtreeResult.entry
-                }
-            }
-        }
-
-        when (segmentIndex) {
-            request.path.parts.size() -> return RoutingResolveResult(true, this, current.values)
-            else -> return RoutingResolveResult(false, failEntry ?: this)
-        }
-    }
-
-    public fun resolve(request: RoutingResolveContext): RoutingResolveResult {
-        return resolve(request, 0, RoutingResolveResult(false, this, HashMap<String, MutableList<String>>()))
     }
 
     public fun addInterceptor(interceptor: (RoutingApplicationRequest, (RoutingApplicationRequest) -> ApplicationRequestStatus) -> ApplicationRequestStatus) {
@@ -68,6 +41,4 @@ open class RoutingEntry(val parent: RoutingEntry?) {
     public fun handle(handler: RoutingApplicationRequest.(Unit) -> ApplicationRequestStatus) {
         handlers.add(RoutingHandler(RoutingApplicationRequest::class, Unit::class, handler))
     }
-
-    open fun createChild(): RoutingEntry = RoutingEntry(this)
 }

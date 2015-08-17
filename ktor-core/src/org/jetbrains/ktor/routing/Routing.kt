@@ -38,6 +38,33 @@ class Routing() : RoutingEntry(parent = null) {
         application.handler.intercept { request, next -> interceptor(request, next) }
     }
 
+    protected fun resolve(entry: RoutingEntry, request: RoutingResolveContext, segmentIndex: Int, current: RoutingResolveResult): RoutingResolveResult {
+        var failEntry: RoutingEntry? = null
+        for ((selector, child) in entry.children) {
+            val result = selector.evaluate(request, segmentIndex)
+            if (result.succeeded) {
+                for ((key, values) in result.values) {
+                    current.values.getOrPut(key, { arrayListOf() }).addAll(values)
+                }
+                val subtreeResult = resolve(child, request, segmentIndex + result.segmentIncrement, current)
+                if (subtreeResult.succeeded) {
+                    return subtreeResult
+                } else {
+                    failEntry = subtreeResult.entry
+                }
+            }
+        }
+
+        when (segmentIndex) {
+            request.path.parts.size() -> return RoutingResolveResult(true, entry, current.values)
+            else -> return RoutingResolveResult(false, failEntry ?: entry)
+        }
+    }
+
+    public fun resolve(request: RoutingResolveContext): RoutingResolveResult {
+        return resolve(this, request, 0, RoutingResolveResult(false, this, HashMap<String, MutableList<String>>()))
+    }
+
     private fun interceptor(request: ApplicationRequest, next: (ApplicationRequest) -> ApplicationRequestStatus): ApplicationRequestStatus {
         val resolveContext = RoutingResolveContext(request.requestLine, request.parameters, request.headers)
         val resolveResult = resolve(resolveContext)
