@@ -89,7 +89,7 @@ class RoutingProcessingTest {
 
         testHost.application.routing {
             path("user") {
-                intercept(false) { request, next ->
+                addInterceptor { request, next ->
                     userIntercepted = true
                     try {
                         wrappedWithInterceptor = true
