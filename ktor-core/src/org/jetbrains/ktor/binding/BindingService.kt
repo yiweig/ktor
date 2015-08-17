@@ -1,13 +1,9 @@
 package org.jetbrains.ktor.binding
 
 import java.lang.reflect.*
+import java.util.concurrent.*
 import kotlin.reflect.*
 import kotlin.reflect.jvm.*
-
-private data class BindingInfo(val type: KClass<*>,
-                               val policy: BindingPolicy,
-                               val constructor: KFunction<Any>,
-                               val parameters: Map<String, BindingParameter>)
 
 data class BindingParameter(val name: String, val type: KType, val isOptional: Boolean)
 
@@ -24,15 +20,25 @@ interface BindingContext {
 }
 
 public class BindingService {
-    private val binders = hashMapOf<KClass<*>, BindingInfo>()
-    private val policies = hashMapOf<KClass<*>, BindingPolicy>()
+    private data class BindingInfo(val type: KClass<*>,
+                                   val policy: BindingPolicy,
+                                   val constructor: KFunction<Any>,
+                                   val parameters: Map<String, BindingParameter>)
+
+    private val binders = ConcurrentHashMap<KClass<*>, BindingInfo>()
+    private val policies = ConcurrentHashMap<KClass<*>, BindingPolicy>()
 
     fun policy(annotationType: KClass<*>, policy: BindingPolicy) {
         policies.put(annotationType, policy)
     }
 
+    fun create(type: KClass<*>, context: BindingContext): Any {
+        val info = getOrCreateBindingInfo(type)
+        return create(info, context)
+    }
+
     private fun getOrCreateBindingInfo(type: KClass<*>): BindingInfo {
-        return binders.getOrPut(type) {
+        return binders.computeIfAbsent(type) {
             val policy = type.annotations.map { policies[it.annotationType().kotlin] }.filterNotNull().single()
             val constructor: KFunction<Any> = type.primaryConstructor ?: type.constructors.single()
             val parameters = constructor.parameters.map { parameter ->
@@ -44,12 +50,7 @@ public class BindingService {
         }
     }
 
-    fun create(type: KClass<*>, context: BindingContext): Any {
-        val info = getOrCreateBindingInfo(type)
-        return create(info, context)
-    }
-
-    fun create(info: BindingInfo, context: BindingContext): Any {
+    private fun create(info: BindingInfo, context: BindingContext): Any {
         val arguments = info.parameters.map {
             resolveParameter(context, it.value)
         }.toTypedArray()
@@ -67,7 +68,7 @@ public class BindingService {
         return context.getValue(parameter)
     }
 
-    fun KType.rawType(): KClass<*>? {
+    private fun KType.rawType(): KClass<*>? {
         val javaType: Type = javaType
         return when (javaType) {
             is Class<*> -> javaType.kotlin
