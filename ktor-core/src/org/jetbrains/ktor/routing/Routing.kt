@@ -7,16 +7,18 @@ import org.jetbrains.ktor.locations.*
 import java.util.*
 import kotlin.reflect.jvm.*
 
-class Routing : RoutingEntry(null) {
-    val conversionService = DefaultConversionService()
+class Routing() : RoutingEntry(parent = null) {
+    val conversionService: ConversionService = DefaultConversionService()
     val bindingService = BindingService().apply {
         policy(context::class, BindingPolicy.Default)
+        policy(location::class, BindingPolicy.Default)
     }
 
     inner class RoutingBindingContext(val request: RoutingApplicationRequest) : BindingContext {
         override fun getValue(parameter: BindingParameter): Any? {
-            val values = request.parameters[parameter.name] ?: return null
-            return conversionService.convert(values, parameter.type.javaType)
+            if (parameter.type.javaType == RoutingApplicationRequest::class.java )
+                return request
+            return conversionService.fromRequest(request, parameter.name, parameter.type.javaType, parameter.isOptional)
         }
     }
 
@@ -34,10 +36,6 @@ class Routing : RoutingEntry(null) {
 
     fun installInto(application: Application) {
         application.handler.intercept { request, next -> interceptor(request, next) }
-    }
-
-    fun execute(request: ApplicationRequest) {
-        interceptor(request, { ApplicationRequestStatus.Unhandled })
     }
 
     private fun interceptor(request: ApplicationRequest, next: (ApplicationRequest) -> ApplicationRequestStatus): ApplicationRequestStatus {
@@ -60,7 +58,7 @@ class Routing : RoutingEntry(null) {
         }
     }
 
-    private fun processChain(request: RoutingApplicationRequest, interceptors: List<RoutingInterceptor>, handlers: ArrayList<RoutingHandler<*>>): ApplicationRequestStatus {
+    private fun processChain(request: RoutingApplicationRequest, interceptors: List<RoutingInterceptor>, handlers: ArrayList<RoutingHandler<*, *>>): ApplicationRequestStatus {
         fun handle(index: Int, request: RoutingApplicationRequest): ApplicationRequestStatus {
             when {
                 index < interceptors.size() -> {
@@ -69,14 +67,21 @@ class Routing : RoutingEntry(null) {
                 }
                 else -> {
                     for (handler in handlers) {
-                        val handlerFunction = handler.function as Function1<Any, ApplicationRequestStatus>
+                        val handlerFunction = handler.function as Function2<Any, Any, ApplicationRequestStatus>
+
                         val contextType = handler.contextType
                         val context: Any = if (contextType == RoutingApplicationRequest::class)
                             request
                         else
                             bindingService.create(contextType, RoutingBindingContext(request))
 
-                        val handlerResult = handlerFunction(context)
+                        val dataType = handler.dataType
+                        val data: Any = if (dataType == Unit::class)
+                            Unit
+                        else
+                            bindingService.create(dataType, RoutingBindingContext(request))
+
+                        val handlerResult = handlerFunction(context, data)
                         if (handlerResult != ApplicationRequestStatus.Unhandled)
                             return handlerResult
                     }

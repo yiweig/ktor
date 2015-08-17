@@ -47,7 +47,3 @@ fun RoutingEntry.header(name: String, value: String, build: RoutingEntry.() -> U
     select(selector).build()
 }
 
-fun RoutingEntry.handle(handle: RoutingApplicationRequest.() -> ApplicationRequestStatus) {
-    addHandler(handle)
-}
-

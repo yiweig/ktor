@@ -17,8 +17,12 @@ public interface ApplicationRequest {
     public val close: Interceptable0<Unit>
 }
 
+@suppress("NOTHING_TO_INLINE")
 public inline fun ApplicationRequest.createResponse(): ApplicationResponse = createResponse.call()
+
+@suppress("NOTHING_TO_INLINE")
 public inline fun ApplicationRequest.close(): Unit = close.call()
+
 public fun ApplicationRequest.respond(handle: ApplicationResponse.() -> ApplicationRequestStatus): ApplicationRequestStatus {
     return createResponse().handle()
 }

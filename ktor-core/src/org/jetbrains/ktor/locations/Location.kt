@@ -20,37 +20,22 @@ public fun Routing.withLocations(locations: LocationService, body: Routing.() ->
     return this
 }
 
-inline fun RoutingEntry.location<reified T : Any>(noinline body: RoutingEntry.() -> Unit) {
-    location(T::class, body)
-}
-
-inline fun RoutingEntry.get<reified T : Any>(noinline body: ApplicationResponse.(T) -> ApplicationRequestStatus) {
-    location(T::class) {
-        get {
-            handle<T> { location ->
-                respond {
-                    body(location)
-                }
-            }
-        }
-    }
-}
-
+inline fun RoutingEntry.location<reified T : Any>(noinline body: RoutingEntry.() -> Unit) = location(T::class, body)
 fun RoutingEntry.location<T>(data: KClass<T>, body: RoutingEntry.() -> Unit) {
     val locationService = getService(locationServiceKey)
     val entry = locationService.createEntry(this, data)
     entry.body()
 }
 
-inline fun <reified T> RoutingEntry.handle(noinline body: RoutingApplicationRequest.(T) -> ApplicationRequestStatus) {
-    return handle(T::class, body)
-}
-
-fun <T> RoutingEntry.handle(dataClass: KClass<T>, body: RoutingApplicationRequest.(T) -> ApplicationRequestStatus) {
-    addHandler<RoutingApplicationRequest> {
-        val locationService = getService(locationServiceKey)
-        val location = locationService.resolve<T>(dataClass, this)
-        body(location)
+inline fun RoutingEntry.get<reified T : Any>(noinline body: ApplicationResponse.(T) -> ApplicationRequestStatus) {
+    location(T::class) {
+        get {
+            handle<RoutingApplicationRequest, T> { location ->
+                respond {
+                    body(location)
+                }
+            }
+        }
     }
 }
 

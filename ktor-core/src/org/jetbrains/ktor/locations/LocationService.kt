@@ -20,25 +20,6 @@ open public class LocationService(val conversionService: ConversionService) {
                                     val pathParameters: List<LocationInfoProperty>,
                                     val queryParameters: List<LocationInfoProperty>)
 
-    fun LocationInfo.create(request: RoutingApplicationRequest): Any {
-        val constructor = klass.constructors.single()
-        val parameters = constructor.parameters
-        val args = Array(parameters.size()) { index ->
-            val parameter = parameters[index]
-            val parameterType = parameter.type
-            val javaParameterType = parameterType.javaType
-            val parameterName = parameter.name ?: getParameterNameFromAnnotation(parameter)
-            if (parent != null && parameterType.javaType === parent.klass.java) {
-                parent.create(request)
-            } else {
-                conversionService.fromRequest(request, parameterName, javaParameterType, parameterType.isMarkedNullable)
-            }
-        }
-        return constructor.call(*args)
-    }
-
-    private fun getParameterNameFromAnnotation(parameter: KParameter): String = TODO()
-
     private fun ResolvedUriInfo.combine(relativePath: String, queryValues: List<Pair<String, String>>): ResolvedUriInfo {
         val pathElements = (path.split("/") + relativePath.split("/")).filterNot { it.isEmpty() }
         val combinedPath = pathElements.join("/", "/")
@@ -93,11 +74,6 @@ open public class LocationService(val conversionService: ConversionService) {
             LocationInfo(dataClass, parent, parentParameter, path, pathParameters, queryParameters)
         }
     }
-
-    fun resolve<T : Any>(dataClass: KClass<*>, request: RoutingApplicationRequest): T {
-        return getOrCreateInfo(dataClass).create(request) as T
-    }
-
 
     private fun pathAndQuery(location: Any): ResolvedUriInfo {
         val info = getOrCreateInfo(location.javaClass.kotlin)

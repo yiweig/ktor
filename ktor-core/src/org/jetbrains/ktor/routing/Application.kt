@@ -8,7 +8,7 @@ public fun Application.routing(body: RoutingEntry.() -> Unit) {
 }
 
 public fun RoutingEntry.respond(build: ApplicationResponse.() -> ApplicationRequestStatus) {
-    handle { respond(build) }
+    handle<RoutingApplicationRequest, Unit> { respond(build) }
 }
 
 fun RoutingEntry.methodAndPath(method: HttpMethod, path: String, build: RoutingEntry.() -> Unit) {

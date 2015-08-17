@@ -32,7 +32,7 @@ public open class DefaultConversionService : ConversionService {
     }
 
     @suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-    open fun convert(value: String, type: Type): Any {
+    protected open fun convert(value: String, type: Type): Any {
         return when (type) {
             is WildcardType -> convert(value, type.upperBounds.single())
             javaClass<Int>(), javaClass<lang.Integer>() -> value.toInt()
@@ -65,7 +65,7 @@ public open class DefaultConversionService : ConversionService {
         val requestParameters = request.parameters[name]
         return if (requestParameters == null) {
             if (!optional) {
-                throw InconsistentRoutingException("Parameter '$name' was not found in the request")
+                throw InconsistentRoutingException("Parameter '$name' of type '$type' was not found in the request")
             }
             null
         } else {

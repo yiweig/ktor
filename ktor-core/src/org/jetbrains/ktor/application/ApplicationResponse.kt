@@ -34,5 +34,8 @@ public fun ApplicationResponse.write(body: Writer.() -> Unit): ApplicationReques
 }
 
 
+@suppress("NOTHING_TO_INLINE")
 public inline fun ApplicationResponse.header(name: String, value: String): ApplicationResponse = header.call(name, value)
+
+@suppress("NOTHING_TO_INLINE")
 public inline fun ApplicationResponse.status(code: Int): ApplicationResponse = status.call(code)
