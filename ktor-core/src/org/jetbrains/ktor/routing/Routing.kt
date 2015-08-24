@@ -26,9 +26,7 @@ class Routing() : RoutingEntry(parent = null) {
         for ((selector, child) in entry.children) {
             val result = selector.evaluate(request, segmentIndex)
             if (result.succeeded) {
-                for ((key, values) in result.values) {
-                    current.values.getOrPut(key, { arrayListOf() }).addAll(values)
-                }
+                current.values.appendAll(result.values)
                 val subtreeResult = resolve(child, request, segmentIndex + result.segmentIncrement, current)
                 if (subtreeResult.succeeded) {
                     return subtreeResult
@@ -39,13 +37,13 @@ class Routing() : RoutingEntry(parent = null) {
         }
 
         when (segmentIndex) {
-            request.path.parts.size() -> return RoutingResolveResult(true, entry, current.values)
-            else -> return RoutingResolveResult(false, failEntry ?: entry)
+            request.path.parts.size() -> return RoutingResolveResult(true, entry, current.values.freeze())
+            else -> return RoutingResolveResult(false, failEntry ?: entry, ValuesMap.Empty)
         }
     }
 
     public fun resolve(request: RoutingResolveContext): RoutingResolveResult {
-        return resolve(this, request, 0, RoutingResolveResult(false, this, HashMap<String, MutableList<String>>()))
+        return resolve(this, request, 0, RoutingResolveResult(false, this, ValuesMap()))
     }
 
     private fun ApplicationRequestContext.interceptor(next: ApplicationRequestContext.() -> ApplicationRequestStatus): ApplicationRequestStatus {

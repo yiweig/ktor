@@ -68,11 +68,11 @@ class TestApplicationRequest() : ApplicationRequest {
 
     override var body: String = ""
 
-    override val parameters: Map<String, List<String>> get() {
+    override val parameters: ValuesMap get() {
         return queryParameters()
     }
 
-    override val headers = hashMapOf<String, String>()
+    override val headers = ValuesMap()
 }
 
 class TestApplicationResponse : ApplicationResponse {

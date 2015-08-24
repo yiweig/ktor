@@ -4,16 +4,16 @@ import org.jetbrains.ktor.http.*
 
 fun ApplicationRequest.queryString(): String = requestLine.queryString()
 
-fun ApplicationRequest.queryParameters(): Map<String, List<String>> {
+fun ApplicationRequest.queryParameters(): ValuesMap {
     val query = queryString()
     if (query.isEmpty())
-        return mapOf()
-    val parameters = hashMapOf<String, MutableList<String>>()
+        return ValuesMap.Empty
+    val parameters = ValuesMap()
     for (item in query.split("&")) {
         val pair = item.split("=")
         when (pair.size()) {
-            1 -> parameters.getOrPut(pair[0], { arrayListOf() }).add("")
-            2 -> parameters.getOrPut(pair[0], { arrayListOf() }).add(pair[1])
+            1 -> parameters.append(pair[0], "")
+            2 -> parameters.append(pair[0], pair[1])
         }
     }
     return parameters
