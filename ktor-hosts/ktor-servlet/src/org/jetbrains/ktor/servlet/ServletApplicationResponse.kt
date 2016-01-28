@@ -5,6 +5,7 @@ import org.jetbrains.ktor.host.*
 import org.jetbrains.ktor.http.*
 import org.jetbrains.ktor.interception.*
 import java.io.*
+import java.nio.channels.*
 import javax.servlet.*
 import javax.servlet.http.*
 
@@ -53,6 +54,17 @@ class ServletApplicationResponse(override val call: ServletApplicationCall, val 
                 pump.start()
             } else {
                 file.inputStream().use { it.copyTo(this) }
+            }
+        }
+    }
+
+    override fun sendAsyncChannel(channel: AsynchronousByteChannel) {
+        stream {
+            if (this is ServletOutputStream) {
+                val asyncContext = startAsync()
+                AsyncChannelPump(channel, asyncContext, this, call.application.config.log).start()
+            } else {
+                Channels.newInputStream(channel).copyTo(this)
             }
         }
     }

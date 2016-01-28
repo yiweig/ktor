@@ -54,7 +54,15 @@ abstract class BaseApplicationResponse(open val call: ApplicationCall) : Applica
                 call.withIfRange(LocalDateTime.ofInstant(Instant.ofEpochMilli(value.lastModified), ZoneId.systemDefault())) { range ->
                     headers.append(HttpHeaders.AcceptRanges, RangeUnits.Bytes)
                     when {
-                        range == null -> sendFile(value.file, 0L, value.file.length())
+                        range == null -> {
+                            // TODO compression settings
+                            if (call.request.acceptEncodingItems().any { it.value == "gzip" }) {
+                                headers.append(HttpHeaders.ContentEncoding, "gzip")
+                                sendAsyncChannel(AsyncDeflaterByteChannel(StatefulAsyncFileChannel(AsynchronousFileChannel.open(value.file.toPath(), StandardOpenOption.READ))))
+                            } else {
+                                sendFile(value.file, 0L, value.file.length())
+                            }
+                        }
                         range.unit != RangeUnits.Bytes -> sendError(HttpStatusCode.BadRequest, "Unsupported range unit ${range.unit}")
                         else -> {
                             val merged = range.ranges.resolveRanges(value.file.length()).mergeRanges()
@@ -90,7 +98,13 @@ abstract class BaseApplicationResponse(open val call: ApplicationCall) : Applica
             contentType(value.contentType)
         }
         if (value is HasContentLength && !call.request.headers.contains(HttpHeaders.Range)) {
-            contentLength(value.contentLength) // TODO revisit it for partial request case
+            contentLength(value.contentLength)
+        }
+    }
+
+    protected open fun sendAsyncChannel(channel: AsynchronousByteChannel) {
+        stream {
+            Channels.newInputStream(channel).use { it.copyTo(this) }
         }
     }
 
@@ -104,7 +118,7 @@ abstract class BaseApplicationResponse(open val call: ApplicationCall) : Applica
 
     protected open fun sendStream(stream: InputStream) {
         stream {
-            stream.copyTo(this)
+            stream.use { it.copyTo(this) }
         }
     }
 
