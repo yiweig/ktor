@@ -1,7 +1,9 @@
-package org.jetbrains.ktor.http
+package org.jetbrains.ktor.nio
 
+import java.io.*
 import java.nio.*
 import java.nio.channels.*
+import java.nio.file.*
 import java.util.concurrent.*
 
 class StatefulAsyncFileChannel (val fc: AsynchronousFileChannel, val start: Long = 0, val endInclusive: Long = fc.size() - 1) : AsynchronousByteChannel {
@@ -61,3 +63,6 @@ class StatefulAsyncFileChannel (val fc: AsynchronousFileChannel, val start: Long
         return f
     }
 }
+
+fun Path.asyncReadOnlyFileChannel(start: Long = 0, endInclusive: Long = Files.size(this) - 1) = StatefulAsyncFileChannel(AsynchronousFileChannel.open(this, StandardOpenOption.READ), start, endInclusive)
+fun File.asyncReadOnlyFileChannel(start: Long = 0, endInclusive: Long = length() - 1) = toPath().asyncReadOnlyFileChannel(start, endInclusive)

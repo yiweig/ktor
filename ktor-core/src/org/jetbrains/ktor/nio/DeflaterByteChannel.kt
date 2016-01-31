@@ -138,6 +138,8 @@ class AsyncDeflaterByteChannel(val source: AsynchronousByteChannel) : Asynchrono
 
 }
 
+fun AsynchronousByteChannel.deflated() = AsyncDeflaterByteChannel(this)
+
 private fun ByteBuffer.putTo(other: ByteBuffer): Int {
     val size = Math.min(remaining(), other.remaining())
     for (i in 1..size) {

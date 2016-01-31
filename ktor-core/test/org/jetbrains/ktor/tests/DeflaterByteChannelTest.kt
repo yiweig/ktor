@@ -1,6 +1,7 @@
 package org.jetbrains.ktor.tests
 
 import org.jetbrains.ktor.http.*
+import org.jetbrains.ktor.nio.*
 import org.junit.*
 import org.mockito.*
 import java.io.*

@@ -4,6 +4,7 @@ import org.jetbrains.ktor.application.*
 import org.jetbrains.ktor.content.*
 import org.jetbrains.ktor.http.*
 import org.jetbrains.ktor.interception.*
+import org.jetbrains.ktor.nio.*
 import java.io.*
 import java.nio.channels.*
 import java.nio.file.*
@@ -53,12 +54,13 @@ abstract class BaseApplicationResponse(open val call: ApplicationCall) : Applica
             is LocalFileContent -> {
                 call.withIfRange(LocalDateTime.ofInstant(Instant.ofEpochMilli(value.lastModified), ZoneId.systemDefault())) { range ->
                     headers.append(HttpHeaders.AcceptRanges, RangeUnits.Bytes)
+
                     when {
                         range == null -> {
                             // TODO compression settings
                             if (call.request.acceptEncodingItems().any { it.value == "gzip" }) {
                                 headers.append(HttpHeaders.ContentEncoding, "gzip")
-                                sendAsyncChannel(AsyncDeflaterByteChannel(StatefulAsyncFileChannel(AsynchronousFileChannel.open(value.file.toPath(), StandardOpenOption.READ))))
+                                sendAsyncChannel(value.file.asyncReadOnlyFileChannel().deflated())
                             } else {
                                 sendFile(value.file, 0L, value.file.length())
                             }
