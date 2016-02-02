@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jetbrains</groupId>
-    <version>0.1.6-SNAPSHOT</version>
+    <version>rc-1025</version>
     <packaging>pom</packaging>
     <artifactId>ktor</artifactId>
 
     <properties>
-        <kotlin.version>0.1-SNAPSHOT</kotlin.version>
+        <kotlin.version>1.0.0-rc-1025</kotlin.version>
         <dokka.version>0.9.4</dokka.version>
     </properties>
 
@@ -199,6 +199,14 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+<repository>
+<snapshots>
+<enabled>false</enabled>
+</snapshots>
+<id>bintray-kotlin-kotlin-eap</id>
+<name>bintray</name>
+<url>http://dl.bintray.com/kotlin/kotlin-eap</url>
+</repository>
     </repositories>
 
     <pluginRepositories>
@@ -217,5 +225,13 @@
                 <enabled>true</enabled>
             </snapshots>
         </pluginRepository>
+<pluginRepository>
+<snapshots>
+<enabled>false</enabled>
+</snapshots>
+<id>bintray-kotlin-kotlin-eap</id>
+<name>bintray-plugins</name>
+<url>http://dl.bintray.com/kotlin/kotlin-eap</url>
+</pluginRepository>
     </pluginRepositories>
 </project>
