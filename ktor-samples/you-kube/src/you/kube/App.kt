@@ -1,10 +1,7 @@
 package you.kube
 
-import com.google.gson.*
 import kotlinx.html.*
 import kotlinx.html.stream.*
-import org.ehcache.*
-import org.ehcache.config.*
 import org.jetbrains.ktor.application.*
 import org.jetbrains.ktor.auth.*
 import org.jetbrains.ktor.content.*
@@ -15,8 +12,6 @@ import org.jetbrains.ktor.routing.*
 import org.jetbrains.ktor.sessions.*
 import org.jetbrains.ktor.util.*
 import java.io.*
-import java.util.*
-import java.util.concurrent.atomic.*
 
 @location("/video/{id}")
 data class VideoStream(val id: Long)
