@@ -30,6 +30,13 @@ fun <S : Any> ApplicationCall.session(session: S) = session.apply {
 inline fun <reified S : Any> ApplicationCall.sessionOrNull(): S? = sessionOrNull(S::class)
 fun <S : Any> ApplicationCall.sessionOrNull(type: KClass<S>): S? = if (SessionKey in attributes) attributes[SessionKey].cast(type) else null
 
+fun ApplicationCall.clearSession() {
+    attributes.remove(SessionKey)
+
+    val config = sessionConfig<Any>()
+    config.sessionTracker.unassign(this)
+}
+
 inline fun <reified S : Any> InterceptApplicationCall<ApplicationCall>.withSessions(noinline block: SessionConfigBuilder<S>.() -> Unit) =
     withSessions(S::class, block)
 
