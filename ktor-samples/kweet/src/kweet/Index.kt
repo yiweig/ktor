@@ -9,7 +9,7 @@ import org.jetbrains.ktor.sessions.*
 fun RoutingEntry.index(dao: DAOFacade) {
     get<Index> {
         val user = sessionOrNull<Session>()?.let { dao.user(it.userId) }
-        val top = dao.top(10).map { dao.getKweet(it) } // TODO pass through cache
+        val top = dao.top(10).map { dao.getKweet(it) }
         val latest = dao.latest(10).map { dao.getKweet(it) }
         val etagString = user?.userId.toString() + "," + top.joinToString { it.id.toString() } + latest.joinToString { it.id.toString() }
         val etag = etagString.hashCode()
