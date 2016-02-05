@@ -9,7 +9,6 @@ import org.joda.time.*
 import java.io.*
 
 class DAOFacadeCache(val delegate: DAOFacade, val storagePath: File) : DAOFacade {
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     val cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
             .with(CacheManagerPersistenceConfiguration(storagePath))
             .withCache("kweetsCache",
@@ -30,7 +29,6 @@ class DAOFacadeCache(val delegate: DAOFacade, val storagePath: File) : DAOFacade
                             .buildConfig(String::class.java, User::class.java))
             .build(true)
 
-    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     val kweetsCache = cacheManager.getCache("kweetsCache", Int::class.javaObjectType, Kweet::class.java)
 
     val usersCache = cacheManager.getCache("usersCache", String::class.java, User::class.java)
