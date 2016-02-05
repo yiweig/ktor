@@ -8,7 +8,7 @@ import org.jetbrains.ktor.locations.*
 import org.jetbrains.ktor.routing.*
 import org.jetbrains.ktor.sessions.*
 
-fun RoutingEntry.register(dao: DAO, hashFunction: (String) -> String) {
+fun RoutingEntry.register(dao: DAOFacade, hashFunction: (String) -> String) {
     method(HttpMethod.Post) {
         post<Register> {
             val user = sessionOrNull<Session>()?.let { dao.user(it.userId) }
@@ -24,11 +24,11 @@ fun RoutingEntry.register(dao: DAO, hashFunction: (String) -> String) {
                 } else if (dao.user(it.userId) != null) {
                     redirect(it.copy(error = "User with the following login is already registered", password = ""))
                 } else {
-                    val newUser = User(it.userId, it.email, it.displayName)
                     val hash = hashFunction(it.password)
+                    val newUser = User(it.userId, it.email, it.displayName, hash)
 
                     try {
-                        dao.createUser(newUser, hash)
+                        dao.createUser(newUser)
 
                         session(Session(newUser.userId))
                         redirect(UserPage(newUser.userId))
@@ -50,7 +50,7 @@ fun RoutingEntry.register(dao: DAO, hashFunction: (String) -> String) {
             if (user != null) {
                 redirect(UserPage(user.userId))
             } else {
-                response.send(FreeMarkerContent("register.ftl", mapOf("pageUser" to User(it.userId, it.email, it.displayName), "error" to it.error), ""))
+                response.send(FreeMarkerContent("register.ftl", mapOf("pageUser" to User(it.userId, it.email, it.displayName, ""), "error" to it.error), ""))
             }
         }
     }

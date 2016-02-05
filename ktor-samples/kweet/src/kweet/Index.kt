@@ -6,7 +6,7 @@ import org.jetbrains.ktor.locations.*
 import org.jetbrains.ktor.routing.*
 import org.jetbrains.ktor.sessions.*
 
-fun RoutingEntry.index(dao: DAO) {
+fun RoutingEntry.index(dao: DAOFacade) {
     get<Index> {
         val user = sessionOrNull<Session>()?.let { dao.user(it.userId) }
         val top = dao.top(10).map { dao.getKweet(it) } // TODO pass through cache

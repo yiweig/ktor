@@ -7,7 +7,7 @@ import org.jetbrains.ktor.locations.*
 import org.jetbrains.ktor.routing.*
 import org.jetbrains.ktor.sessions.*
 
-fun RoutingEntry.userPage(dao: DAO) {
+fun RoutingEntry.userPage(dao: DAOFacade) {
     get<UserPage> {
         val user = sessionOrNull<Session>()?.let { dao.user(it.userId) }
         val pageUser = dao.user(it.user)

@@ -6,7 +6,7 @@ import org.jetbrains.ktor.locations.*
 import org.jetbrains.ktor.routing.*
 import org.jetbrains.ktor.sessions.*
 
-fun RoutingEntry.viewKweet(dao: DAO, hashFunction: (String) -> String) {
+fun RoutingEntry.viewKweet(dao: DAOFacade, hashFunction: (String) -> String) {
     get<ViewKweet> {
         val user = sessionOrNull<Session>()?.let { dao.user(it.userId) }
         val date = System.currentTimeMillis()

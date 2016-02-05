@@ -5,6 +5,7 @@ import freemarker.cache.*
 import freemarker.template.*
 import kweet.dao.*
 import kweet.model.*
+import org.h2.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.ktor.application.*
 import org.jetbrains.ktor.content.*
@@ -54,13 +55,13 @@ class KweetApp(config: ApplicationConfig) : Application(config) {
     val hmacKey = SecretKeySpec(key, "HmacSHA1")
 
     init {
-        pool.driverClass = org.h2.Driver::class.java.name
+        pool.driverClass = Driver::class.java.name
         pool.jdbcUrl = "jdbc:h2:file:${dir.canonicalFile.absolutePath}"
         pool.user = ""
         pool.password = ""
     }
 
-    val dao = DAO(Database.connect(pool))
+    val dao: DAOFacade = DAOFacadeCache(DAOFacadeDatabase(Database.connect(pool)), File(dir.parentFile, "ehcache"))
 
     init {
         dao.init()

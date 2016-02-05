@@ -52,6 +52,11 @@
             <artifactId>ktor-jetty</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>3.0.0.m4</version>
+        </dependency>
     </dependencies>
 
     <repositories>
