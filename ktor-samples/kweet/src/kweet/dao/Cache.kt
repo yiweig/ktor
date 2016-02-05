@@ -73,7 +73,9 @@ class DAOFacadeCache(val delegate: DAOFacade, val storagePath: File) : DAOFacade
         val cached = usersCache.get(userId)
         val user = if (cached == null) {
             val dbUser = delegate.user(userId)
-            usersCache.put(userId, dbUser)
+            if (dbUser != null) {
+                usersCache.put(userId, dbUser)
+            }
             dbUser
         } else {
             cached
